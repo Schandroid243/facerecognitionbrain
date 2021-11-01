@@ -84,10 +84,6 @@ function App() {
   }
 
   const displayFaceBox = (boxData) => {
-    boxInfo.leftCol = boxData.leftCol;
-    boxInfo.topRow = boxData.topRow;
-    boxInfo.rigthCol = boxData.rigthCol;
-    boxInfo.bottomRow = boxData.bottomRow;
     setBoxInfo(boxData);
   }
 
