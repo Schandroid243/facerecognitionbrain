@@ -4,11 +4,12 @@ import Logo from './components/Logo/Logo';
 import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
 import Rank from './components/Rank/Rank';
 import Particles from 'react-particles-js';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Clarifai from "clarifai";
 import FaceRecognition from './components/FaceRecognition/FaceRecognition';
 import Signin from './components/Signin/Signin';
 import Register from './components/Register/Register';
+import axios from 'axios';
 
 
 const particlesOption = {
@@ -65,11 +66,19 @@ function App() {
   const [boxInfo, setBoxInfo] = useState({leftCol: 0, topRow: 0, rigthCol: 0, bottomRow: 0});
   const [route, setRoute] = useState('signin');
   const [isSignedIin, setIsSignedIin] = useState(false);
+  const [user, setUser] = useState({
+    id: '',
+    name: '',
+    email: '',
+    myentries: 0,
+    joined: ''
+  });
 
   const onInputChange = (event) => {
     setInput(event.target.value);
     console.log(event.target.value);
   }
+
   const calculateFaceLocation = (data) => {
     const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
     const image = document.getElementById('inputimage');
@@ -96,11 +105,34 @@ function App() {
     } 
   }
 
+  const loadUser = (data) => {
+    setUser({
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      myentries: data.myentries,
+      joined: data.joined,
+    });
+  }
+
   const onSubmit = () => {
     setImageUrl(input);
     app.models.predict(Clarifai.CELEBRITY_MODEL, input)
-              .then(response => displayFaceBox(calculateFaceLocation(response)))
+              .then(response => {
+
+                if(response) {
+                  axios.put(`http://localhost:7200/image/`, {
+                    id: user.id,
+                  }).then((response) => {
+                    //Show merki to know why it doesn't update the state
+                    let entries = response.data;
+                    setUser(Object.assign(user, {myentries: entries}))
+                  });
+                }
+                displayFaceBox(calculateFaceLocation(response))
+              })
               .catch(err => console.log(err));
+             
   }
   return (
     <div className="App">
@@ -111,14 +143,14 @@ function App() {
         route === 'home'
         ?<div>
           <Logo />
-          <Rank />
+          <Rank name={user.name} entries={user.myentries}/>
           <ImageLinkForm  onInputChange={onInputChange} onSubmit={onSubmit}/>
           <FaceRecognition box={boxInfo} imageUrl={imageUrl} />
         </div>
         :(
           route === 'signin'
-          ?<Signin onRouteChange= {onRouteChange}/>
-          :<Register onRouteChange= {onRouteChange} />
+          ?<Signin onRouteChange= {onRouteChange} loadUser={loadUser}/>
+          :<Register onRouteChange= {onRouteChange} loadUser={loadUser}/>
         )
       }
     </div>
