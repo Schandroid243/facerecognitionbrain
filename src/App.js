@@ -66,17 +66,19 @@ function App() {
   const [boxInfo, setBoxInfo] = useState({leftCol: 0, topRow: 0, rigthCol: 0, bottomRow: 0});
   const [route, setRoute] = useState('signin');
   const [isSignedIin, setIsSignedIin] = useState(false);
+  const [myEntries, setMyEntries] = useState(0);
   const [user, setUser] = useState({
     id: '',
     name: '',
     email: '',
-    myentries: 0,
+    myentries:0,
     joined: ''
   });
 
+  
+
   const onInputChange = (event) => {
     setInput(event.target.value);
-    console.log(event.target.value);
   }
 
   const calculateFaceLocation = (data) => {
@@ -113,7 +115,12 @@ function App() {
       myentries: data.myentries,
       joined: data.joined,
     });
+    setMyEntries(data.myentries);
   }
+
+  // let entries;
+
+  
 
   const onSubmit = () => {
     setImageUrl(input);
@@ -121,19 +128,26 @@ function App() {
               .then(response => {
 
                 if(response) {
-                  axios.put(`http://localhost:7200/image/`, {
-                    id: user.id,
-                  }).then((response) => {
-                    //Show merki to know why it doesn't update the state
-                    let entries = response.data;
-                    setUser(Object.assign(user, {myentries: entries}))
-                  });
+                  updateEntries();
                 }
                 displayFaceBox(calculateFaceLocation(response))
               })
               .catch(err => console.log(err));
-             
   }
+
+  const updateEntries = () => {
+    axios.put(`http://localhost:7200/image/`, {
+        id: user.id,
+        }).then((response) => {
+          console.log(response.data);
+          setMyEntries(response.data);
+          //setUser({...user, myentries: myEntries});
+        }).catch((err) => {
+          console.log(err)
+        })
+  };
+  
+
   return (
     <div className="App">
       <Particles className='particles'
@@ -143,7 +157,7 @@ function App() {
         route === 'home'
         ?<div>
           <Logo />
-          <Rank name={user.name} entries={user.myentries}/>
+          <Rank name={user.name} entries={myEntries}/>
           <ImageLinkForm  onInputChange={onInputChange} onSubmit={onSubmit}/>
           <FaceRecognition box={boxInfo} imageUrl={imageUrl} />
         </div>
